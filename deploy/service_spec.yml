@@ -1,0 +1,33 @@
+spec:
+  containers:
+  - name: <CONTAINER_NAME>
+    image: <IMAGE_PATH>
+
+    # --- SECRET mount: credentials injected as environment variables ---
+    # Remove this section if your app has no external database connection.
+    secrets:
+    - snowflakeSecret: app_config.<SECRET_NAME>
+      secretKeyRef: username
+      envVarName: DB_USER
+    - snowflakeSecret: app_config.<SECRET_NAME>
+      secretKeyRef: password
+      envVarName: DB_PASSWORD
+
+    # --- Template variables: injected at CREATE SERVICE time via USING clause ---
+    env:
+      DB_HOST: {{DB_HOST}}
+      DB_PORT: {{DB_PORT}}
+      COMPUTE_POOL: {{COMPUTE_POOL}}
+
+    resources:
+      requests:
+        cpu: "{{CPU_REQUEST}}"
+        memory: "{{MEMORY_REQUEST}}"
+      limits:
+        cpu: "{{CPU_LIMIT}}"
+        memory: "{{MEMORY_LIMIT}}"
+
+  endpoints:
+  - name: app
+    port: <ENDPOINT_PORT>
+    public: true

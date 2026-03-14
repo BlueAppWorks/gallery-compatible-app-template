@@ -1,0 +1,47 @@
+manifest_version: 2
+
+version:
+  name: V1
+  label: "<APP_NAME> v1.0"
+  # comment is used as the app description in Gallery catalog
+  comment: "<APP_DESCRIPTION>"
+
+artifacts:
+  setup_script: scripts/setup.sql
+  default_streamlit: app_public.setup_ui
+  container_services:
+    images:
+      - <IMAGE_PATH>
+
+privileges:
+  # --- Required for Gallery Compatible ---
+  - CREATE COMPUTE POOL:
+      description: "Create a compute pool to run application containers."
+  - BIND SERVICE ENDPOINT:
+      description: "Expose public endpoints for user access."
+
+  # --- Add if your app needs persistent storage ---
+  # - CREATE DATABASE:
+  #     description: "Store persistent application data."
+  # - CREATE WAREHOUSE:
+  #     description: "Execute SQL queries."
+
+# --- Remove this section if your app has no external network access ---
+references:
+  # This is a LOGICAL reference name (not the consumer's actual EAI name).
+  # Consumers bind their own EAI to this reference during setup.
+  # In app code, use REFERENCE('<EAI_REF_NAME>') to resolve to the bound object.
+  - <EAI_REF_NAME>:
+      label: "<EAI_LABEL>"
+      description: "External access for the application container."
+      privileges:
+        - USAGE
+      object_type: EXTERNAL ACCESS INTEGRATION
+      required_at_setup: false
+      register_callback: app_setup.register_reference
+      configuration_callback: app_setup.get_eai_configuration
+
+configuration:
+  log_level: INFO
+  trace_level: ALWAYS
+  grant_callback: app_setup.grant_callback
