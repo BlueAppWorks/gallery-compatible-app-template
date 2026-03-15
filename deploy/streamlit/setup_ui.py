@@ -14,6 +14,15 @@ APP_NAME = session.sql("SELECT CURRENT_DATABASE()").collect()[0][0]
 st.set_page_config(page_title=f"{APP_NAME} Setup", layout="wide")
 
 # ============================================================
+# App-specific configuration — edit these for your app
+# ============================================================
+# Default port for the database connection form.
+# Set to "" if your app has no external database.
+DEFAULT_DB_PORT = "5432"
+DEFAULT_DB_USER = "admin"
+DB_HOST_PLACEHOLDER = "your-postgres.snowflake.app"
+
+# ============================================================
 # Sidebar Navigation
 # ============================================================
 pages = ["Overview", "Setup", "Advanced Settings"]
@@ -45,6 +54,12 @@ def call_procedure(proc: str, *args) -> str:
         result = session.sql(f"CALL app_setup.{proc}()").collect()
     return str(result[0][0]) if result else ""
 
+
+# ============================================================
+# Shared State (read once, used across steps)
+# ============================================================
+pool_name = get_setting("compute_pool")
+db_configured = get_setting("db_configured", "false")
 
 # ============================================================
 # Gallery Operator Detection
@@ -101,29 +116,63 @@ elif selected_page == "Setup":
     # ----------------------------------------------------------
     st.header("Step 1: Compute Pool")
 
-    pool_name = get_setting("compute_pool")
     if pool_name:
-        st.success(f"Compute pool: **{pool_name}**")
+        # Verify pool actually exists and show its status
+        pool_status = "UNKNOWN"
+        try:
+            rows = session.sql(
+                f"SHOW COMPUTE POOLS LIKE '{pool_name}'"
+            ).collect()
+            if rows:
+                pool_status = rows[0]["state"]
+        except Exception:
+            pass
+        st.success(f"Compute pool: **{pool_name}** (status: {pool_status})")
     else:
-        st.warning(
-            "Compute pool not yet created. "
-            "Grant the **CREATE COMPUTE POOL** privilege in the app's security settings."
-        )
-        st.info(
-            "After granting, the pool is auto-created via the grant callback. "
-            "Refresh this page to see the result."
-        )
+        # Check if CREATE COMPUTE POOL privilege is available
+        has_privilege = False
+        try:
+            rows = session.sql(
+                f"SHOW GRANTS TO APPLICATION {APP_NAME}"
+            ).collect()
+            for row in rows:
+                if row["privilege"] == "CREATE COMPUTE POOL":
+                    has_privilege = True
+                    break
+        except Exception:
+            pass
+
+        if has_privilege:
+            st.info(
+                "**CREATE COMPUTE POOL** privilege is granted. "
+                "Click the button below to create the compute pool."
+            )
+            if st.button("Create Compute Pool"):
+                with st.spinner("Creating compute pool..."):
+                    result = call_procedure("ensure_compute_pool")
+                st.success(f"Compute pool created: **{result}**")
+                st.rerun()
+        else:
+            st.warning(
+                "**CREATE COMPUTE POOL** privilege is required."
+            )
+            st.markdown(
+                "**How to grant:**\n"
+                "1. Click the app name in the top navigation bar\n"
+                "2. Click the **Security** tab (or the shield icon)\n"
+                "3. Grant the **CREATE COMPUTE POOL** privilege\n"
+                "4. Come back here and refresh"
+            )
 
     # ----------------------------------------------------------
     # Step 2: Database Connection
-    # Remove this section if your app has no external database.
+    # Remove this entire section if your app has no external database.
     # ----------------------------------------------------------
     st.header("Step 2: Database Connection")
 
-    configured = get_setting("db_configured", "false")
-    if configured == "true":
+    if db_configured == "true":
         db_host = get_setting("db_host")
-        db_port = get_setting("db_port", "<DB_PORT>")
+        db_port = get_setting("db_port", DEFAULT_DB_PORT)
         db_user = get_setting("db_user")
         st.success(f"Connected to: **{db_user}@{db_host}:{db_port}**")
 
@@ -131,11 +180,16 @@ elif selected_page == "Setup":
             call_procedure("reset_config")
             st.rerun()
     else:
+        st.info(
+            "Configure the database connection. "
+            "After saving, approve the **External Access Integration** in the app's security settings."
+        )
         with st.form("db_config"):
-            db_host = st.text_input("Host", placeholder="your-database.example.com")
-            db_port = st.text_input("Port", value="<DB_PORT>")
-            db_user = st.text_input("Username", value="admin")
+            db_host = st.text_input("Host", placeholder=DB_HOST_PLACEHOLDER)
+            db_port = st.text_input("Port", value=DEFAULT_DB_PORT)
+            db_user = st.text_input("Username", value=DEFAULT_DB_USER)
             db_pass = st.text_input("Password", type="password")
+            db_name = st.text_input("Database", placeholder="my_database")
 
             if st.form_submit_button("Save Configuration"):
                 if not db_host or not db_pass:
@@ -160,29 +214,43 @@ elif selected_page == "Setup":
     st.header("Step 3: Service")
 
     status = call_procedure("service_status")
-    st.info(f"Current status: **{status}**")
-
-    if status == "NOT_FOUND":
-        can_start = pool_name and configured == "true"
-        if can_start:
-            if st.button("Start Service"):
-                with st.spinner("Starting service..."):
-                    result = call_procedure("start_service")
-                st.success(result)
-                st.rerun()
-        else:
-            st.warning("Complete Steps 1 and 2 before starting the service.")
-    elif status == "RUNNING":
+    if status == "RUNNING":
+        st.success(f"Service is **RUNNING**")
         url = call_procedure("service_url")
         if url:
-            st.success(f"Endpoint: [https://{url}](https://{url})")
+            st.markdown(f"Endpoint: [https://{url}](https://{url})")
         else:
-            st.info("Service is running but endpoint is not yet available. Please wait...")
+            st.info("Endpoint is not yet available. Please wait and refresh.")
     elif status == "SUSPENDED":
         st.info(
             "Service is suspended. "
             "If Gallery Operator is configured, start it from the Gallery UI."
         )
+        if st.button("Resume Service"):
+            with st.spinner("Resuming..."):
+                result = call_procedure("resume_service")
+            st.success(result)
+            st.rerun()
+    elif status == "NOT_FOUND":
+        can_start = bool(pool_name) and db_configured == "true"
+        if can_start:
+            if st.button("Start Service"):
+                with st.spinner("Starting service..."):
+                    result = call_procedure("start_service")
+                if result.startswith("ERROR"):
+                    st.error(result)
+                else:
+                    st.success(result)
+                    st.rerun()
+        else:
+            missing = []
+            if not pool_name:
+                missing.append("Step 1 (Compute Pool)")
+            if db_configured != "true":
+                missing.append("Step 2 (Database Connection)")
+            st.warning(f"Complete {' and '.join(missing)} before starting the service.")
+    else:
+        st.info(f"Service status: **{status}**")
 
     # ----------------------------------------------------------
     # Step 4: Gallery Integration

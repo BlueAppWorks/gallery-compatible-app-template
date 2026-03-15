@@ -60,10 +60,10 @@ BEGIN
     IF (:db_host IS NULL OR :db_host = '') THEN
         -- Return placeholder before consumer configures the connection.
         -- The platform requires a valid response even if not yet configured.
-        RETURN '{"type": "CONFIGURATION", "payload": {"host_ports": ["example.com:<DB_PORT>"], "allowed_secrets": "ALL"}}';
+        RETURN '{"type": "CONFIGURATION", "payload": {"host_ports": ["example.com:5432"], "allowed_secrets": "ALL"}}';
     END IF;
 
-    db_port := COALESCE(:db_port, '<DB_PORT>');
+    db_port := COALESCE(:db_port, '5432');
     db_host := REPLACE(:db_host, '"', '');
     db_port := REPLACE(:db_port, '"', '');
 
@@ -90,7 +90,7 @@ GRANT USAGE ON PROCEDURE app_setup.get_eai_configuration(VARCHAR)
 
 CREATE OR REPLACE PROCEDURE app_setup.configure_database(
     p_host VARCHAR,
-    p_port VARCHAR DEFAULT '<DB_PORT>',
+    p_port VARCHAR DEFAULT '5432',
     p_user VARCHAR DEFAULT 'admin',
     p_pass VARCHAR DEFAULT ''
 )

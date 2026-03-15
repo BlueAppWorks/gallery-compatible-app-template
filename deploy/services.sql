@@ -160,7 +160,7 @@ BEGIN
 
     BEGIN SELECT value INTO :db_port FROM app_config.settings WHERE key = 'db_port';
     EXCEPTION WHEN OTHER THEN NULL; END;
-    db_port := COALESCE(:db_port, '<DB_PORT>');
+    db_port := COALESCE(:db_port, '5432');
 
     -- Read resource settings (optional overrides from Setup UI)
     BEGIN SELECT value INTO :cpu_request FROM app_config.settings WHERE key = 'cpu_request';

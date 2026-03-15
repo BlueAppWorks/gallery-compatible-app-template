@@ -24,7 +24,6 @@ Gallery Operator manages compute pool lifecycle (start/stop) via time-based leas
 | `<EAI_REF_NAME>` | `my_eai` | manifest.yml, services.sql, config.sql |
 | `<EAI_LABEL>` | `External API Access` | manifest.yml |
 | `<SECRET_NAME>` | `db_secret` | config.sql, service_spec.yml |
-| `<DB_PORT>` | `5432` | config.sql, service_spec.yml, entrypoint.sh |
 | `<ENDPOINT_PORT>` | `8080` | service_spec.yml |
 
 ## Directory Structure
@@ -76,7 +75,7 @@ Remove the `references` section from `manifest.yml` and the EAI/database procedu
 
 A 4-step wizard that guides consumers through:
 
-1. **Compute Pool** — Auto-created on privilege grant
+1. **Compute Pool** — Privilege check + manual create button
 2. **Database Connection** — Host, port, credentials (if applicable)
 3. **Service** — Start, status, endpoint URL
 4. **Gallery Integration** — Operator detection, GRANT guidance

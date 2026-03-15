@@ -21,7 +21,7 @@ fi
 
 # Connection settings (injected via service_spec.yml template variables)
 export DB_HOST=${DB_HOST:?DB_HOST is required}
-export DB_PORT=${DB_PORT:-<DB_PORT>}
+export DB_PORT=${DB_PORT:-5432}
 
 echo "Target: ${DB_USER}@${DB_HOST}:${DB_PORT}"
 
