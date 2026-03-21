@@ -155,15 +155,12 @@ step4_running = svc_status in ("READY", "RUNNING")
 
 # Step 5: Gallery Operator detected
 step5_done = False
-gallery_operator_version = None
 try:
     rows = session.sql(
-        "SELECT version FROM BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR "
+        "SELECT app_name FROM BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR "
         "WHERE app_name = 'BLUE_APP_GALLERY' LIMIT 1"
     ).collect()
     step5_done = len(rows) > 0
-    if step5_done:
-        gallery_operator_version = rows[0]["VERSION"]
 except Exception:
     pass
 
@@ -202,7 +199,7 @@ if selected_page == "Overview":
 
     if step5_done:
         st.success(
-            f"Gallery Operator detected (v{gallery_operator_version}). "
+            "Gallery Operator detected. "
             "This app is managed by Gallery — start and stop from the Gallery UI."
         )
     elif all_done:
@@ -533,7 +530,7 @@ elif selected_page == "Setup":
     with st.expander("Connect to Gallery Operator", expanded=(s5 == "current")):
         if step5_done:
             st.markdown(
-                _done_badge(f"Gallery Operator Connected (v{gallery_operator_version})"),
+                _done_badge("Gallery Operator Connected"),
                 unsafe_allow_html=True,
             )
         else:

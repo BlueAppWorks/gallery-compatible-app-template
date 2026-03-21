@@ -495,15 +495,12 @@ GRANT SELECT ON TABLE BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR TO APPLICATION <
 
 ```python
 gallery_operator_installed = False
-gallery_operator_version = None
 try:
     rows = session.sql(
-        "SELECT version FROM BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR "
-        "WHERE app_name = 'APP_GALLERY_OPERATOR' LIMIT 1"
+        "SELECT app_name FROM BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR "
+        "WHERE app_name = 'BLUE_APP_GALLERY' LIMIT 1"
     ).collect()
     gallery_operator_installed = len(rows) > 0
-    if gallery_operator_installed:
-        gallery_operator_version = rows[0]["VERSION"]
 except Exception:
     pass
 ```
@@ -531,7 +528,7 @@ if not gallery_operator_installed:
         language="sql",
     )
 else:
-    st.success(f"Gallery Operator: インストール済み ({gallery_operator_version})")
+    st.success("Gallery Operator: インストール済み")
 ```
 
 > **`CURRENT_DATABASE()` の活用**: Native App 内で `CURRENT_DATABASE()` を呼ぶと
@@ -692,11 +689,11 @@ App 内コード:   REFERENCE('postgres_eai')  → 実体 MY_CUSTOM_EAI に解�
 
 ### 権限委任（ACCOUNTADMIN で実行）
 
-- [ ] `GRANT OPERATE ON COMPUTE POOL <pool> TO APPLICATION APP_GALLERY_OPERATOR`
-- [ ] `GRANT MONITOR ON COMPUTE POOL <pool> TO APPLICATION APP_GALLERY_OPERATOR`
-- [ ] `GRANT APPLICATION ROLE <app>.app_admin TO APPLICATION APP_GALLERY_OPERATOR`
+- [ ] `GRANT OPERATE ON COMPUTE POOL <pool> TO APPLICATION BLUE_APP_GALLERY`
+- [ ] `GRANT MONITOR ON COMPUTE POOL <pool> TO APPLICATION BLUE_APP_GALLERY`
+- [ ] `GRANT APPLICATION ROLE <app>.app_admin TO APPLICATION BLUE_APP_GALLERY`
   - これにより Gallery Operator が `resume_service()` を CALL できる
-- [ ] Postgres Instance 使用時: `GRANT OPERATE ON POSTGRES INSTANCE <pg> TO APPLICATION APP_GALLERY_OPERATOR`
+- [ ] Postgres Instance 使用時: `GRANT OPERATE ON POSTGRES INSTANCE <pg> TO APPLICATION BLUE_APP_GALLERY`
 
 ### Gallery Operator 登録
 
@@ -827,11 +824,11 @@ GRANT USAGE ON SCHEMA BLUE_APP_GALLERY_REGISTRY.PUBLIC TO APPLICATION <app_name>
 GRANT SELECT ON TABLE BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR TO APPLICATION <app_name>;
 
 -- 3. Compute Pool / Postgres Instance の権限を Gallery Operator に付与（ACCOUNTADMIN）
-GRANT OPERATE ON COMPUTE POOL <pool> TO APPLICATION APP_GALLERY_OPERATOR;
-GRANT MONITOR ON COMPUTE POOL <pool> TO APPLICATION APP_GALLERY_OPERATOR;
+GRANT OPERATE ON COMPUTE POOL <pool> TO APPLICATION BLUE_APP_GALLERY;
+GRANT MONITOR ON COMPUTE POOL <pool> TO APPLICATION BLUE_APP_GALLERY;
 
 -- 4. APPLICATION ROLE を Gallery Operator に付与（ACCOUNTADMIN）
-GRANT APPLICATION ROLE <app_name>.app_admin TO APPLICATION APP_GALLERY_OPERATOR;
+GRANT APPLICATION ROLE <app_name>.app_admin TO APPLICATION BLUE_APP_GALLERY;
 
 -- 5. resume_service の動作確認
 CALL <app_name>.app_setup.resume_service();
