@@ -98,6 +98,10 @@ GRANT MONITOR ON COMPUTE POOL <POOL_NAME> TO APPLICATION BLUE_APP_GALLERY;
 GRANT APPLICATION ROLE <APP_NAME>.app_admin TO APPLICATION BLUE_APP_GALLERY;
 ```
 
+## Guides
+
+- [Browser Cache Mitigation](docs/browser-cache-guide.md) — Prevent stale pages after Compute Pool SUSPEND/RESUME
+
 ## Specification
 
 See [docs/gallery-compatible-spec.md](docs/gallery-compatible-spec.md) for the full Gallery Compatible App Specification v3.
