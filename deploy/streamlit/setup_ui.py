@@ -138,14 +138,31 @@ step1_done = bool(pool_name)
 # Step 2: Database configured
 step2_done = db_configured == "true"
 
-# Step 3: EAI approved — check via SYSTEM$GET_ALL_REFERENCES
+# Step 3: EAI approved — verify reference is actually bound and valid
+# After DROP/CREATE APPLICATION, stale references may still appear in
+# SYSTEM$GET_ALL_REFERENCES but fail at service creation time.
 step3_done = False
+eai_stale = False
 try:
     ref_result = session.sql(
         f"SELECT SYSTEM$GET_ALL_REFERENCES('{EAI_REF_NAME}')"
     ).collect()[0][0]
     if ref_result and ref_result.strip() not in ("", "[]"):
-        step3_done = True
+        try:
+            import json
+            refs = json.loads(ref_result)
+            if isinstance(refs, list) and len(refs) > 0:
+                eai_check = session.sql(
+                    f"CALL app_setup.get_eai_configuration('{EAI_REF_NAME}')"
+                ).collect()[0][0]
+                if eai_check and '"host_ports"' in eai_check and '"placeholder"' not in eai_check:
+                    step3_done = True
+                else:
+                    eai_stale = True
+            else:
+                eai_stale = True
+        except Exception:
+            eai_stale = True
 except Exception:
     pass
 
@@ -395,6 +412,27 @@ elif selected_page == "Setup":
             st.markdown(
                 _done_badge(f"EAI Approved — {RESOURCE_TYPE_LABEL} access enabled"),
                 unsafe_allow_html=True,
+            )
+        elif eai_stale:
+            st.error(
+                "**EAI reference appears stale.** The previous approval may no longer be valid "
+                "(this can happen after the application is reinstalled).\n\n"
+                "**Please re-approve the EAI** by following the steps below."
+            )
+
+            db_host_display = get_setting("db_host", "your-database-host")
+            db_port_display = get_setting("db_port", DEFAULT_DB_PORT)
+
+            st.markdown(
+                "**How to re-approve:**\n\n"
+                "1. Click the **⚙️ gear icon** in the top-right corner of this page "
+                "to open the app settings\n"
+                f"2. Find **\"{EAI_DISPLAY_LABEL}\"** listed under **External Access**\n"
+                "3. If it shows as \"Approved\" from a previous installation, "
+                "click **Review** to verify the connection details:\n"
+                f"   - Allowed host: `{db_host_display}:{db_port_display}`\n"
+                "4. Click **Approve** (or re-approve) to activate the integration\n"
+                "5. Return to this Setup page and click **Check EAI Status** below"
             )
         else:
             st.warning(

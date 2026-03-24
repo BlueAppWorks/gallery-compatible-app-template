@@ -101,6 +101,7 @@ GRANT APPLICATION ROLE <APP_NAME>.app_admin TO APPLICATION BLUE_APP_GALLERY;
 ## Guides
 
 - [Browser Cache Mitigation](docs/browser-cache-guide.md) — Prevent stale pages after Compute Pool SUSPEND/RESUME
+- [Image Versioning & Deploy](docs/image-versioning-guide.md) — Avoid stale container images and stage file issues
 
 ## Specification
 
