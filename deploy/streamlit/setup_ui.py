@@ -325,7 +325,7 @@ elif selected_page == "Setup":
                 st.markdown(
                     "**How to grant:**\n"
                     "1. Click the app name **in the top navigation bar** of this page\n"
-                    "2. Click the **Security** tab (or the shield icon next to the app name)\n"
+                    "2. Click the **Configurations** tab (or the gear icon next to the app name)\n"
                     "3. Find **CREATE COMPUTE POOL** and click **Grant**\n"
                     "4. Come back to this Setup page and **refresh**"
                 )
@@ -453,7 +453,7 @@ elif selected_page == "Setup":
             st.markdown(
                 "**How to approve:**\n\n"
                 f"1. Click the app name **{APP_NAME}** in the top navigation bar of this page\n"
-                "2. Click the **Security** tab (shield icon)\n"
+                "2. Click the **Configurations** tab (gear icon)\n"
                 f"3. Find **\"{EAI_DISPLAY_LABEL}\"** under External Access\n"
                 "4. Click **Review** to see the connection details:\n"
                 f"   - Allowed host: `{db_host_display}:{db_port_display}`\n"
@@ -462,7 +462,7 @@ elif selected_page == "Setup":
             )
 
             st.info(
-                "**Tip:** The Security tab is in Snowsight's Native App detail page, "
+                "**Tip:** The Configurations tab is in Snowsight's Native App detail page, "
                 "not inside this Streamlit app. Look for the tab bar at the top that shows "
                 "the app name."
             )
