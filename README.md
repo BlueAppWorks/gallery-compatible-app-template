@@ -89,6 +89,31 @@ through the required GRANT statements. No special setup is needed in your app.
 **Your app's responsibility:** Provide `app_setup.resume_service()` so the Operator
 can start the SERVICE when the Compute Pool is resumed.
 
+## For AI-Assisted Development
+
+If you're using an AI coding assistant (Claude Code, Cursor, etc.) to deploy your app to Snowflake, add the following to your project's `CLAUDE.md`:
+
+```markdown
+# Snowflake Native App Deployment
+
+This app is deployed as a **Gallery Compatible** Snowflake Native App.
+
+## MUST READ FIRST
+
+Before creating or modifying `deploy/` directory:
+1. Read: https://github.com/BlueAppWorks/gallery-compatible-app-template/blob/main/CLAUDE.md
+2. Read: https://github.com/BlueAppWorks/gallery-compatible-app-template/blob/main/docs/gallery-compatible-spec.md
+
+## Rules
+
+- Follow the template structure exactly
+- Do not rename `app_admin` role or `resume_service()` signature
+- Add app-specific config as EXTENSION POINTS (see template CLAUDE.md)
+- Replace all `<PLACEHOLDER>` values
+```
+
+This ensures the AI follows the template structure correctly when creating deployment files.
+
 ## Guides
 
 - [Browser Cache Mitigation](docs/browser-cache-guide.md) — Prevent stale pages after Compute Pool SUSPEND/RESUME
