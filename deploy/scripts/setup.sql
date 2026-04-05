@@ -58,7 +58,7 @@ CREATE OR REPLACE STREAMLIT app_public.setup_ui
     MAIN_FILE = '/setup_ui.py';
 
 GRANT USAGE ON STREAMLIT app_public.setup_ui TO APPLICATION ROLE app_admin;
-GRANT USAGE ON STREAMLIT app_public.setup_ui TO APPLICATION ROLE app_user;
+-- Note: setup_ui is admin-only (not granted to app_user)
 
 -- ============================================================
 -- Gallery Compatible: resume_service() is required
