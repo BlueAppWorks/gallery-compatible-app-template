@@ -77,26 +77,17 @@ A 4-step wizard that guides consumers through:
 
 1. **Compute Pool** — Privilege check + manual create button
 2. **Database Connection** — Host, port, credentials (if applicable)
-3. **Service** — Start, status, endpoint URL
-4. **Gallery Integration** — Operator detection, GRANT guidance
+3. **EAI Approval** — External Access Integration for network access
+4. **Service** — Create, status, endpoint URL
 
 ## Gallery Operator Integration
 
-After deploying your app, the consumer needs to:
+Gallery Operator **discovers** your app automatically via its Discovery feature.
+The consumer adds your app in the Operator dashboard, and the Operator guides them
+through the required GRANT statements. No special setup is needed in your app.
 
-```sql
--- 1. Grant registry access (for Gallery detection)
-GRANT USAGE ON DATABASE BLUE_APP_GALLERY_REGISTRY TO APPLICATION <APP_NAME>;
-GRANT USAGE ON SCHEMA BLUE_APP_GALLERY_REGISTRY.PUBLIC TO APPLICATION <APP_NAME>;
-GRANT SELECT ON TABLE BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR TO APPLICATION <APP_NAME>;
-
--- 2. Grant compute pool control to Gallery Operator
-GRANT OPERATE ON COMPUTE POOL <POOL_NAME> TO APPLICATION BLUE_APP_GALLERY;
-GRANT MONITOR ON COMPUTE POOL <POOL_NAME> TO APPLICATION BLUE_APP_GALLERY;
-
--- 3. Grant app role to Gallery Operator (for resume_service)
-GRANT APPLICATION ROLE <APP_NAME>.app_admin TO APPLICATION BLUE_APP_GALLERY;
-```
+**Your app's responsibility:** Provide `app_setup.resume_service()` so the Operator
+can start the SERVICE when the Compute Pool is resumed.
 
 ## Guides
 

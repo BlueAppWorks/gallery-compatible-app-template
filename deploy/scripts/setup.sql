@@ -61,27 +61,8 @@ GRANT USAGE ON STREAMLIT app_public.setup_ui TO APPLICATION ROLE app_admin;
 GRANT USAGE ON STREAMLIT app_public.setup_ui TO APPLICATION ROLE app_user;
 
 -- ============================================================
--- Gallery Operator Detection & Auto-Grant
--- At install time, registry access may not yet be granted.
--- This is a best-effort attempt; the Setup UI handles the fallback.
+-- Gallery Compatible: resume_service() is required
+-- Gallery Operator will call this procedure to start the SERVICE.
+-- The GRANT to Gallery Operator is done by the consumer after
+-- adding this app in the Operator dashboard.
 -- ============================================================
-DECLARE
-    v_gallery_available BOOLEAN DEFAULT FALSE;
-BEGIN
-    BEGIN
-        SELECT TRUE INTO :v_gallery_available
-        FROM BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR
-        WHERE app_name = 'BLUE_APP_GALLERY'
-        LIMIT 1;
-    EXCEPTION WHEN OTHER THEN
-        v_gallery_available := FALSE;
-    END;
-
-    IF (:v_gallery_available) THEN
-        BEGIN
-            GRANT APPLICATION ROLE app_admin TO APPLICATION BLUE_APP_GALLERY;
-        EXCEPTION WHEN OTHER THEN
-            NULL; -- already granted or not yet accessible
-        END;
-    END IF;
-END;

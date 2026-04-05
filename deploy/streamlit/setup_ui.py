@@ -1,9 +1,13 @@
 """
 Gallery Compatible App - Setup UI
-5-step guided wizard with progress tracking and auto-expand.
+4-step guided wizard with progress tracking and auto-expand.
 
 Replace <PLACEHOLDER> values with your app-specific names.
 Completed steps collapse automatically; the current action step opens.
+
+Note: Gallery Operator integration is handled by the Operator itself.
+The Operator discovers this app and guides the consumer through the
+required GRANT statements. This app only needs to provide resume_service().
 """
 
 import time
@@ -170,21 +174,10 @@ except Exception:
 step4_done = svc_status != "NOT_FOUND"
 step4_running = svc_status in ("READY", "RUNNING")
 
-# Step 5: Gallery Operator detected
-step5_done = False
-try:
-    rows = session.sql(
-        "SELECT app_name FROM BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR "
-        "WHERE app_name = 'BLUE_APP_GALLERY' LIMIT 1"
-    ).collect()
-    step5_done = len(rows) > 0
-except Exception:
-    pass
-
 # Determine current step (first incomplete)
-step_states = [step1_done, step2_done, step3_done, step4_done, step5_done]
+step_states = [step1_done, step2_done, step3_done, step4_done]
 done_count = sum(step_states)
-all_done = done_count == 5
+all_done = done_count == 4
 
 if not step1_done:
     current_step = 1
@@ -194,8 +187,6 @@ elif not step3_done:
     current_step = 3
 elif not step4_done:
     current_step = 4
-elif not step5_done:
-    current_step = 5
 else:
     current_step = 0  # All done
 
@@ -214,13 +205,12 @@ def step_state(step_num: int, done: bool) -> str:
 if selected_page == "Overview":
     st.title(f"{APP_NAME}")
 
-    if step5_done:
+    if all_done:
         st.success(
-            "Gallery Operator detected. "
-            "This app is managed by Gallery — start and stop from the Gallery UI."
+            "All setup steps are complete. Your app is ready to use.\n\n"
+            "**Gallery Operator users:** Add this app in the Operator dashboard "
+            "to enable lifecycle management (start/stop via Gallery UI)."
         )
-    elif all_done:
-        st.success("All setup steps are complete. Your app is ready to use.")
     else:
         st.info("Setup is not complete. Go to the **Setup** page to continue.")
 
@@ -253,14 +243,18 @@ elif selected_page == "Setup":
 
     # Overall progress
     if all_done:
-        st.success("All setup steps are complete. Your app is ready to use.")
+        st.success(
+            "All setup steps are complete. Your app is ready to use.\n\n"
+            "**Gallery Operator users:** Add this app in the Operator dashboard "
+            "to enable lifecycle management."
+        )
     else:
-        st.progress(done_count / 5)
-        st.caption(f"Setup progress: **{done_count}/5** steps complete")
+        st.progress(done_count / 4)
+        st.caption(f"Setup progress: **{done_count}/4** steps complete")
 
     # Quick status bar
-    step_labels = ["Compute Pool", "Database", "EAI", "Service", "Gallery"]
-    qs_cols = st.columns(5)
+    step_labels = ["Compute Pool", "Database", "EAI", "Service"]
+    qs_cols = st.columns(4)
     for i, (label, done) in enumerate(zip(step_labels, step_states)):
         with qs_cols[i]:
             color = "#0d6" if done else "#f55" if (i + 1) == current_step else "#888"
@@ -554,63 +548,6 @@ elif selected_page == "Setup":
                     else:
                         st.code(logs, language="text")
 
-    st.divider()
-
-    # ----------------------------------------------------------
-    # Step 5: Gallery Operator Integration
-    # ----------------------------------------------------------
-    s5 = step_state(5, step5_done)
-    st.markdown(
-        _step_header(5, "Gallery Operator Integration", s5),
-        unsafe_allow_html=True,
-    )
-
-    with st.expander("Connect to Gallery Operator", expanded=(s5 == "current")):
-        if step5_done:
-            st.markdown(
-                _done_badge("Gallery Operator Connected"),
-                unsafe_allow_html=True,
-            )
-        else:
-            st.info(
-                "Run the following GRANTs in a **Snowsight SQL Worksheet** as **ACCOUNTADMIN** "
-                "to connect this app with Gallery Operator."
-            )
-
-        # Build GRANT SQL with actual or placeholder names
-        pool_display = pool_name if pool_name else "<COMPUTE_POOL_NAME>"
-
-        grant_sql = (
-            f"-- Run in Snowsight Worksheet as ACCOUNTADMIN\n\n"
-            f"-- 1. Registry access (Gallery Operator detection)\n"
-            f"GRANT USAGE ON DATABASE BLUE_APP_GALLERY_REGISTRY\n"
-            f"    TO APPLICATION {APP_NAME};\n"
-            f"GRANT USAGE ON SCHEMA BLUE_APP_GALLERY_REGISTRY.PUBLIC\n"
-            f"    TO APPLICATION {APP_NAME};\n"
-            f"GRANT SELECT ON TABLE BLUE_APP_GALLERY_REGISTRY.PUBLIC.OPERATOR\n"
-            f"    TO APPLICATION {APP_NAME};\n"
-            f"\n"
-            f"-- 2. App role (allows Gallery Operator to manage this app)\n"
-            f"GRANT APPLICATION ROLE {APP_NAME}.app_admin\n"
-            f"    TO APPLICATION BLUE_APP_GALLERY;\n"
-            f"\n"
-            f"-- 3. Compute Pool (start/stop control)\n"
-            f"GRANT OPERATE ON COMPUTE POOL {pool_display}\n"
-            f"    TO APPLICATION BLUE_APP_GALLERY;\n"
-            f"GRANT MONITOR ON COMPUTE POOL {pool_display}\n"
-            f"    TO APPLICATION BLUE_APP_GALLERY;\n"
-        )
-
-        st.code(grant_sql, language="sql")
-
-        if not pool_name:
-            st.caption(
-                "`<COMPUTE_POOL_NAME>` will be replaced when the compute pool is created."
-            )
-
-        if not step5_done:
-            if st.button("Check Gallery Operator", type="primary", key="check_gallery"):
-                st.rerun()
 
 
 # ============================================================
